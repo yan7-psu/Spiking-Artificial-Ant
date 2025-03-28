@@ -23,9 +23,9 @@ class SantaFeEnvironment:
         self.moves = 0
         self.eaten = 0
         self.matrix_exc = copy.deepcopy(self.matrix)
-        # ✅ Print food locations after reset
+        # Print food locations after reset
         #food_count = sum(row.count("food") for row in self.matrix_exc)
-        #print(f"🍎 Food Reloaded: {food_count} Pieces → Reset Complete")
+        #print(f"Food Reloaded: {food_count} Pieces → Reset Complete")
     
     def reset(self, start_x, start_y, direction):
         self.col_start = start_x
@@ -44,7 +44,7 @@ class SantaFeEnvironment:
             self.moves += 1
             old_dir = self.dir  # Store previous direction
             self.dir = (self.dir - 1) % 4  # Rotate left
-            #print(f"↩️ Turn Left: {self.direction[old_dir]} → {self.direction[self.dir]}")
+            #print(f"Turn Left: {self.direction[old_dir]} → {self.direction[self.dir]}")
 
     def turn_right(self):
         """Turns the agent right (clockwise)."""
@@ -52,11 +52,11 @@ class SantaFeEnvironment:
             self.moves += 1
             old_dir = self.dir  # Store previous direction
             self.dir = (self.dir + 1) % 4  # Rotate right
-            #print(f"↪️ Turn Right: {self.direction[old_dir]} → {self.direction[self.dir]}")
+            #print(f"Turn Right: {self.direction[old_dir]} → {self.direction[self.dir]}")
 
     def move_forward(self):
         """Moves the agent forward in the current direction."""
-        #print(f"🔹 move_forward() called. matrix_row={getattr(self, 'matrix_row', 'NOT SET')}, self ID={id(self)}")
+        #print(f" move_forward() called. matrix_row={getattr(self, 'matrix_row', 'NOT SET')}, self ID={id(self)}")
         if self.moves < self.max_moves:
             self.moves += 1
             old_row, old_col = self.row, self.col  # Store old position
@@ -66,7 +66,7 @@ class SantaFeEnvironment:
                 self.eaten += 1  # Increase food count when food is collected
                 self.matrix_exc[self.row][self.col] = "empty"  # Remove food
             self.matrix_exc[self.row][self.col] = "passed"
-            #print(f"🚶 Move: ({old_row},{old_col}) → ({self.row},{self.col}), Food Collected: {self.eaten}")        
+            #print(f"Move: ({old_row},{old_col}) → ({self.row},{self.col}), Food Collected: {self.eaten}")        
 
     def sense_food(self):
         """Checks if food is ahead in the direction the agent is facing."""
@@ -102,7 +102,7 @@ class SantaFeEnvironment:
         self.matrix_col = len(self.matrix[0])
         self.matrix_exc = copy.deepcopy(self.matrix)
 
-        #print(f"✅ parse_matrix() executed: matrix_row={self.matrix_row}, matrix_col={self.matrix_col}, self ID={id(self)}")
+        #print(f" parse_matrix() executed: matrix_row={self.matrix_row}, matrix_col={self.matrix_col}, self ID={id(self)}")
 
     def get_state(self):
         """Returns the state as a NumPy array instead of a PyTorch tensor."""
@@ -123,7 +123,7 @@ class SantaFeEnvironment:
         # Combine all state information into a single list (32 + 32 + 4 + 1 = 69)
         state = ant_x_encoding + ant_y_encoding + direction_encoding + [food_ahead]
 
-        return np.array(state, dtype=np.float32)  # ✅ Convert to NumPy array
+        return np.array(state, dtype=np.float32)  #  Convert to NumPy array
     
     def step(self, action):
 
