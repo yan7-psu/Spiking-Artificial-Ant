@@ -88,8 +88,8 @@ def convert_genome_to_snn(genome):
 
     # Debugging: Check actual parameter count
     actual_params = sum(np.prod(state_dict[key].shape) for key in state_dict)
-    #print(f"✅ Expected GENOME_LENGTH: {GENOME_LENGTH}")
-    #print(f"✅ Actual network parameter count: {actual_params}")
+    #print(f"Expected GENOME_LENGTH: {GENOME_LENGTH}")
+    #print(f"Actual network parameter count: {actual_params}")
 
     if len(genome_array) != actual_params:
         raise ValueError(f"Genome size {len(genome_array)} does not match network parameter size {actual_params}.")
@@ -146,9 +146,9 @@ class SantaFeEnvironment:
         self.moves = 0
         self.eaten = 0
         self.matrix_exc = copy.deepcopy(self.matrix)
-        # ✅ Print food locations after reset
+        # Print food locations after reset
         #food_count = sum(row.count("food") for row in self.matrix_exc)
-        #print(f"🍎 Food Reloaded: {food_count} Pieces → Reset Complete")
+        #print(f"Food Reloaded: {food_count} Pieces → Reset Complete")
 
     @property
     def position(self):
@@ -161,7 +161,7 @@ class SantaFeEnvironment:
             self.moves += 1
             old_dir = self.dir  # Store previous direction
             self.dir = (self.dir - 1) % 4  # Rotate left
-            #print(f"↩️ Turn Left: {self.direction[old_dir]} → {self.direction[self.dir]}")
+            #print(f" Turn Left: {self.direction[old_dir]} → {self.direction[self.dir]}")
 
     def turn_right(self):
         """Turns the agent right (clockwise)."""
@@ -169,11 +169,11 @@ class SantaFeEnvironment:
             self.moves += 1
             old_dir = self.dir  # Store previous direction
             self.dir = (self.dir + 1) % 4  # Rotate right
-            #print(f"↪️ Turn Right: {self.direction[old_dir]} → {self.direction[self.dir]}")
+            #print(f" Turn Right: {self.direction[old_dir]} → {self.direction[self.dir]}")
 
     def move_forward(self):
         """Moves the agent forward in the current direction."""
-        #print(f"🔹 move_forward() called. matrix_row={getattr(self, 'matrix_row', 'NOT SET')}, self ID={id(self)}")
+        #print(f" move_forward() called. matrix_row={getattr(self, 'matrix_row', 'NOT SET')}, self ID={id(self)}")
         if self.moves < self.max_moves:
             self.moves += 1
             old_row, old_col = self.row, self.col  # Store old position
@@ -183,7 +183,7 @@ class SantaFeEnvironment:
                 self.eaten += 1  # Increase food count when food is collected
                 self.matrix_exc[self.row][self.col] = "empty"  # Remove food
             self.matrix_exc[self.row][self.col] = "passed"
-            #print(f"🚶 Move: ({old_row},{old_col}) → ({self.row},{self.col}), Food Collected: {self.eaten}")        
+            #print(f"Move: ({old_row},{old_col}) → ({self.row},{self.col}), Food Collected: {self.eaten}")        
 
     def sense_food(self):
         """Checks if food is ahead in the direction the agent is facing."""
@@ -219,7 +219,7 @@ class SantaFeEnvironment:
         self.matrix_col = len(self.matrix[0])
         self.matrix_exc = copy.deepcopy(self.matrix)
 
-        #print(f"✅ parse_matrix() executed: matrix_row={self.matrix_row}, matrix_col={self.matrix_col}, self ID={id(self)}")
+        #print(f"parse_matrix() executed: matrix_row={self.matrix_row}, matrix_col={self.matrix_col}, self ID={id(self)}")
 
     def get_state(self):
         """Returns the state representation of the ant's position, direction, and food presence ahead."""
@@ -254,8 +254,8 @@ class SantaFeEnvironment:
         # extracted_direction = direction_encoding.index(1)  # Find index of 1 in direction
         # extracted_food = food_ahead  # This is already a boolean
 
-        # ✅ Print to Verify
-        # print(f"📌 Extracted State - Ant_X: {extracted_x}, Ant_Y: {extracted_y}, Direction: {extracted_direction}, Food Ahead: {extracted_food}")
+        #  Print to Verify
+        # print(f" Extracted State - Ant_X: {extracted_x}, Ant_Y: {extracted_y}, Direction: {extracted_direction}, Food Ahead: {extracted_food}")
         return state_tensor
 
 
@@ -263,7 +263,7 @@ def evaluate_fitness(individual, environment):
     """Runs the GA-evolved SNN in the Santa Fe Trail environment and evaluates performance."""
     model = convert_genome_to_snn(individual)
 
-    environment._reset()  # ✅ Ensure environment resets properly before evaluation
+    environment._reset()  # Ensure environment resets properly before evaluation
 
     time_steps = 0
     while environment.moves < environment.max_moves:
@@ -282,27 +282,27 @@ def evaluate_fitness(individual, environment):
 
         time_steps += 1  # Track number of steps
 
-    # ✅ Correctly track food collected
+    # Correctly track food collected
     collected_food = environment.eaten  
 
-    # ✅ Ensure fitness is always positive
+    # Ensure fitness is always positive
     fitness = collected_food
     fitness = max(fitness, 0)  # Ensures fitness remains non-negative
     
     #print(f"🔍 Fitness Evaluation: Collected Food={collected_food}, Time Steps={time_steps}, Final Fitness={fitness}")
 
-    return (fitness,)  # ✅ Must be a tuple for DEAP
+    return (fitness,)  # Must be a tuple for DEAP
 
 import multiprocessing
 
 # Wrapper function to pass environment explicitly
 def evaluate_fitness_wrapper(individual):
     """Each worker creates its own environment instance."""
-    environment = SantaFeEnvironment()  # ✅ Create a new environment
+    environment = SantaFeEnvironment()  #  Create a new environment
     with open("santafe_trail.txt") as trail_file:
-        environment.parse_matrix(trail_file)  # ✅ Load the trail
+        environment.parse_matrix(trail_file)  #  Load the trail
     
-    return evaluate_fitness(individual, environment)  # ✅ Pass a fresh environment
+    return evaluate_fitness(individual, environment)  #  Pass a fresh environment
 
 toolbox.register("evaluate", evaluate_fitness)
 toolbox.register("select", tools.selTournament, tournsize=7)
@@ -315,7 +315,7 @@ toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05)
 # =======================
 
 def main():
-    #global global_environment  # ✅ Use global variable for multiprocessing
+    #global global_environment  #  Use global variable for multiprocessing
     random.seed(70)
 
     # Load Santa Fe Trail from file
@@ -325,10 +325,10 @@ def main():
 
     pop = toolbox.population(n=100)
 
-    # ✅ Pass the SAME `environment` instance to `evaluate_fitness`
+    # Pass the SAME `environment` instance to `evaluate_fitness`
     #toolbox.register("evaluate", lambda ind: evaluate_fitness(ind, environment))
 
-    # ✅ Use multiprocessing pool for parallel evaluations
+    # Use multiprocessing pool for parallel evaluations
     pool = multiprocessing.Pool()
     toolbox.register("map", pool.map)  # Parallel execution
     toolbox.register("evaluate", evaluate_fitness_wrapper)  # Wrapper function
@@ -340,7 +340,7 @@ def main():
     stats.register("Min", np.min)
     stats.register("Max", np.max)
 
-    # ✅ Run the GA with multiprocessing
+    # Run the GA with multiprocessing
     pop, logbook = algorithms.eaSimple(pop, toolbox, 
                                        cxpb=0.5, mutpb=0.1, ngen=100,
                                        stats=stats,
