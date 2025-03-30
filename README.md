@@ -12,4 +12,5 @@ The input layer consists for 69 neuron which represent the state of the ant. The
 
 # References:
 [Chemical Reaction Network Control Systems for Agent-Based Foraging Tasks](https://pdxscholar.library.pdx.edu/open_access_etds/2203/)
+
 [Integrating Deep Q-Networks and Reinforcement Learning for Autonomous Navigation in the Santa Fe Trail Problem](https://core.ac.uk/download/621339497.pdf)
