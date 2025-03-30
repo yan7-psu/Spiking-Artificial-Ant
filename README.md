@@ -4,8 +4,7 @@ This repo looks at Koza's Artificial Ant problem and attempts to solve the Santa
 
 # Network Architecture
 
-The Spiking Neural network is comprised of SLSTM neurons, which allows the network to have memory. The network is comprised of a input layer, 1 hidden layer and 1 output layer.
-The input layer consists for 69 neuron which represent the state of the ant. The output layer conists of 3 neurons which map to an action that the ant can take.
+The Spiking Neural Network (SNN) is composed of SLSTM neurons, enabling the network to retain memory. The architecture consists of an input layer, one hidden layer, and an output layer. The input layer contains 69 neurons, representing the state of the ant. The output layer has 3 neurons, each corresponding to a possible action the ant can take.
 
 # Results
 ** WIP **
