@@ -256,7 +256,7 @@ def evaluate_fitness(individual, environment):
     """Runs the GA-evolved SNN in the Santa Fe Trail environment and evaluates performance."""
     model = convert_genome_to_snn(individual)
 
-    environment._reset()  # ✅ Ensure environment resets properly before evaluation
+    environment._reset() 
 
     time_steps = 0
     while environment.moves < environment.max_moves:
@@ -280,7 +280,7 @@ def evaluate_fitness(individual, environment):
     if collected_food >= environment.total_food:
         print("All food pellets eaten!")
 
-    fitness = collected_food - 0.01 * environment.moves
+    fitness = collected_food - (0.01 * environment.moves)
     fitness = max(fitness, 0)
     
     #print(f" Fitness Evaluation: Collected Food={collected_food}, Time Steps={time_steps}, Final Fitness={fitness}")
@@ -295,14 +295,14 @@ t_path = os.path.join(os.path.dirname(__file__),"santafe_trail.txt")
 # Wrapper function to pass environment explicitly
 def evaluate_fitness_wrapper(individual):
     """Each worker creates its own environment instance."""
-    environment = SantaFeEnvironment()  # ✅ Create a new environment
+    environment = SantaFeEnvironment()  
     with open(t_path) as trail_file:
-        environment.parse_matrix(trail_file)  # ✅ Load the trail
+        environment.parse_matrix(trail_file)  
     
-    return evaluate_fitness(individual, environment)  # ✅ Pass a fresh environment
+    return evaluate_fitness(individual, environment)  
 
 toolbox.register("evaluate", evaluate_fitness)
-toolbox.register("select", tools.selTournament, tournsize=5)
+toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.5, indpb=0.05)
 
@@ -323,7 +323,7 @@ def main():
 
     pop = toolbox.population(n=mu)
 
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(processes=6)
     toolbox.register("map", pool.map)
     toolbox.register("evaluate", evaluate_fitness_wrapper)
 
