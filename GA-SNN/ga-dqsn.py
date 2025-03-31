@@ -21,7 +21,7 @@ from functools import partial
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 # Define Spiking Neural Network (SNN)
-beta = 0.9      
+beta = 0.9        # Decay rate for Leaky Integrate-and-Fire (LIF) neurons
 
 class SpikingNet(nn.Module):
     def __init__(self, num_inputs=69, num_hidden=128, num_outputs=3):
@@ -68,7 +68,7 @@ toolbox.register("attr_float", np.random.uniform, -5, 5)
 toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, GENOME_LENGTH)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
-#Convert GA Genome to SNN
+#3. Convert GA Genome to SNN
 import torch
 import numpy as np
 
@@ -77,7 +77,7 @@ def convert_genome_to_snn(genome):
     model = SpikingNet()
     state_dict = model.state_dict()  # Get model parameters
     genome_array = np.array(genome)  # Convert genome to NumPy array
-    index = 0  
+    index = 0  # Track genome position
 
     # Debugging: Check actual parameter count
     actual_params = sum(np.prod(state_dict[key].shape) for key in state_dict)
@@ -133,34 +133,38 @@ class SantaFeEnvironment:
         """Resets the environment state for a new episode."""
         self.row = self.row_start
         self.col = self.col_start
-        self.dir = 1  
+        self.dir = 1  # Always reset direction
         self.moves = 0
         self.eaten = 0
         self.matrix_exc = copy.deepcopy(self.matrix)
-        # Print food locations after reset
+        # ✅ Print food locations after reset
         #food_count = sum(row.count("food") for row in self.matrix_exc)
-        #print(f"Food Reloaded: {food_count} Pieces → Reset Complete")
+        #print(f"🍎 Food Reloaded: {food_count} Pieces → Reset Complete")
 
     @property
     def position(self):
+        """Returns the current position and direction of the agent."""
         return (self.row, self.col, self.direction[self.dir])
 
     def turn_left(self):
+        """Turns the agent left (counterclockwise)."""
         if self.moves < self.max_moves:
             self.moves += 1
             old_dir = self.dir  # Store previous direction
             self.dir = (self.dir - 1) % 4  # Rotate left
-            #print(f"Turn Left: {self.direction[old_dir]} → {self.direction[self.dir]}")
+            #print(f"↩️ Turn Left: {self.direction[old_dir]} → {self.direction[self.dir]}")
 
     def turn_right(self):
+        """Turns the agent right (clockwise)."""
         if self.moves < self.max_moves:
             self.moves += 1
             old_dir = self.dir  # Store previous direction
             self.dir = (self.dir + 1) % 4  # Rotate right
-            #print(f"Turn Right: {self.direction[old_dir]} → {self.direction[self.dir]}")
+            #print(f"↪️ Turn Right: {self.direction[old_dir]} → {self.direction[self.dir]}")
 
     def move_forward(self):
-        #print(f"move_forward() called. matrix_row={getattr(self, 'matrix_row', 'NOT SET')}, self ID={id(self)}")
+        """Moves the agent forward in the current direction."""
+        #print(f"🔹 move_forward() called. matrix_row={getattr(self, 'matrix_row', 'NOT SET')}, self ID={id(self)}")
         if self.moves < self.max_moves:
             self.moves += 1
             old_row, old_col = self.row, self.col  # Store old position
@@ -170,28 +174,33 @@ class SantaFeEnvironment:
                 self.eaten += 1  # Increase food count when food is collected
                 self.matrix_exc[self.row][self.col] = "empty"  # Remove food
             self.matrix_exc[self.row][self.col] = "passed"
-            #print(f"Move: ({old_row},{old_col}) → ({self.row},{self.col}), Food Collected: {self.eaten}")        
+            #print(f"🚶 Move: ({old_row},{old_col}) → ({self.row},{self.col}), Food Collected: {self.eaten}")        
 
     def sense_food(self):
+        """Checks if food is ahead in the direction the agent is facing."""
         ahead_row = (self.row + self.dir_row[self.dir]) % self.matrix_row
         ahead_col = (self.col + self.dir_col[self.dir]) % self.matrix_col
         return self.matrix_exc[ahead_row][ahead_col] == "food"
 
     def if_food_ahead(self, out1, out2):
+        """Performs one of two actions based on whether food is ahead."""
         return out1() if self.sense_food() else out2()
 
     def run(self, routine):
+        """Runs a given routine for a complete episode."""
         self._reset()
         while self.moves < self.max_moves:
             routine()
 
     def parse_matrix(self, matrix):
         self.matrix = list()
+        self.total_food = 0
         for i, line in enumerate(matrix):
             self.matrix.append(list())
             for j, col in enumerate(line):
                 if col == "#":
                     self.matrix[-1].append("food")
+                    self.total_food += 1
                 elif col == ".":
                     self.matrix[-1].append("empty")
                 elif col == "S":
@@ -206,6 +215,8 @@ class SantaFeEnvironment:
         #print(f" parse_matrix() executed: matrix_row={self.matrix_row}, matrix_col={self.matrix_col}, self ID={id(self)}")
 
     def get_state(self):
+        """Returns the state representation of the ant's position, direction, and food presence ahead."""
+
         # One-hot encode the ant's X and Y position (32 each)
         ant_x_encoding = [0] * 32
         ant_y_encoding = [0] * 32
@@ -224,27 +235,28 @@ class SantaFeEnvironment:
         if 0 <= ahead_x < self.matrix_row and 0 <= ahead_y < self.matrix_col:
             food_ahead = 1 if self.matrix_exc[ahead_y][ahead_x] == "food" else 0
 
-        # Combine all state information into a single list
+        # Combine all state information into a single list (32 + 32 + 4 + 1 = 69)
         state = ant_x_encoding + ant_y_encoding + direction_encoding + [food_ahead]
 
         # Convert to PyTorch tensor and add batch dimension
         state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)  # Shape: (1, 69)
 
-        # Debugging Values
+        # 🔍 Extract Debugging Values
         # extracted_x = ant_x_encoding.index(1)  # Find the index where 1 is placed
         # extracted_y = ant_y_encoding.index(1)  # Find the index where 1 is placed
         # extracted_direction = direction_encoding.index(1)  # Find index of 1 in direction
         # extracted_food = food_ahead  # This is already a boolean
 
-        # Print to Verify
-        # print(f"Extracted State - Ant_X: {extracted_x}, Ant_Y: {extracted_y}, Direction: {extracted_direction}, Food Ahead: {extracted_food}")
+        # ✅ Print to Verify
+        # print(f"📌 Extracted State - Ant_X: {extracted_x}, Ant_Y: {extracted_y}, Direction: {extracted_direction}, Food Ahead: {extracted_food}")
         return state_tensor
 
 
 def evaluate_fitness(individual, environment):
+    """Runs the GA-evolved SNN in the Santa Fe Trail environment and evaluates performance."""
     model = convert_genome_to_snn(individual)
 
-    environment._reset()  
+    environment._reset()  # ✅ Ensure environment resets properly before evaluation
 
     time_steps = 0
     while environment.moves < environment.max_moves:
@@ -263,14 +275,15 @@ def evaluate_fitness(individual, environment):
 
         time_steps += 1  # Track number of steps
 
-    # Correctly track food collected
-    collected_food = environment.eaten  
+    collected_food = environment.eaten
 
-    # Ensure fitness is always positive
-    fitness = collected_food
-    fitness = max(fitness, 0)  # Ensures fitness remains non-negative
+    if collected_food >= environment.total_food:
+        print("All food pellets eaten!")
+
+    fitness = collected_food - 0.01 * environment.moves
+    fitness = max(fitness, 0)
     
-    #print(f"Fitness Evaluation: Collected Food={collected_food}, Time Steps={time_steps}, Final Fitness={fitness}")
+    #print(f" Fitness Evaluation: Collected Food={collected_food}, Time Steps={time_steps}, Final Fitness={fitness}")
 
     return (fitness,)
 
@@ -282,11 +295,11 @@ t_path = os.path.join(os.path.dirname(__file__),"santafe_trail.txt")
 # Wrapper function to pass environment explicitly
 def evaluate_fitness_wrapper(individual):
     """Each worker creates its own environment instance."""
-    environment = SantaFeEnvironment()  # Create a new environment
+    environment = SantaFeEnvironment()  # ✅ Create a new environment
     with open(t_path) as trail_file:
-        environment.parse_matrix(trail_file)  # Load the trail
+        environment.parse_matrix(trail_file)  # ✅ Load the trail
     
-    return evaluate_fitness(individual, environment)  # Pass a fresh environment
+    return evaluate_fitness(individual, environment)  # ✅ Pass a fresh environment
 
 toolbox.register("evaluate", evaluate_fitness)
 toolbox.register("select", tools.selTournament, tournsize=5)
@@ -294,7 +307,7 @@ toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.5, indpb=0.05)
 
 
-# Main Function - Run GA
+#  Run GA
 
 torch.set_num_threads(1)
 torch.set_num_interop_threads(1)
@@ -324,7 +337,7 @@ def main():
     logbook = tools.Logbook()
     logbook.header = ["gen", "nevals"] + stats.fields
 
-    # Evaluate initial population
+    # === Evaluate initial population ===
     invalid_ind = [ind for ind in pop if not ind.fitness.valid]
     fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
     for ind, fit in zip(invalid_ind, fitnesses):
@@ -334,12 +347,12 @@ def main():
     logbook.record(gen=0, nevals=len(invalid_ind), **record)
     print(logbook.stream)
 
-    # Main Evolution Loop
+    # === Main Evolution Loop ===
     for gen in range(1, ngen + 1):
-        # Manual crossover + mutation
+        # Variation Strategy: Manual crossover + mutation (Variation 5)
         offspring = [toolbox.clone(ind) for ind in toolbox.select(pop, lambda_)]
 
-        # Crossover
+        # Crossover (pairwise)
         for i in range(1, len(offspring), 2):
             if random.random() < cxpb:
                 offspring[i-1], offspring[i] = toolbox.mate(
@@ -347,7 +360,7 @@ def main():
                 del offspring[i-1].fitness.values
                 del offspring[i].fitness.values
 
-        # Mutation
+        # Mutation (per individual)
         for i in range(len(offspring)):
             if random.random() < mutpb:
                 offspring[i], = toolbox.mutate(offspring[i])
@@ -368,7 +381,7 @@ def main():
         logbook.record(gen=gen, nevals=len(invalid_ind), **record)
         print(logbook.stream)
 
-    # Final Model & Visualization
+    # Plot and Log
     logging.info("Best genome found!")
     print(logbook)
 
