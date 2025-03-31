@@ -137,9 +137,9 @@ class SantaFeEnvironment:
         self.moves = 0
         self.eaten = 0
         self.matrix_exc = copy.deepcopy(self.matrix)
-        # ✅ Print food locations after reset
+        # Print food locations after reset
         #food_count = sum(row.count("food") for row in self.matrix_exc)
-        #print(f"🍎 Food Reloaded: {food_count} Pieces → Reset Complete")
+        #print(f"Food Reloaded: {food_count} Pieces → Reset Complete")
 
     @property
     def position(self):
@@ -152,7 +152,7 @@ class SantaFeEnvironment:
             self.moves += 1
             old_dir = self.dir  # Store previous direction
             self.dir = (self.dir - 1) % 4  # Rotate left
-            #print(f"↩️ Turn Left: {self.direction[old_dir]} → {self.direction[self.dir]}")
+            #print(f"Turn Left: {self.direction[old_dir]} → {self.direction[self.dir]}")
 
     def turn_right(self):
         """Turns the agent right (clockwise)."""
@@ -160,11 +160,11 @@ class SantaFeEnvironment:
             self.moves += 1
             old_dir = self.dir  # Store previous direction
             self.dir = (self.dir + 1) % 4  # Rotate right
-            #print(f"↪️ Turn Right: {self.direction[old_dir]} → {self.direction[self.dir]}")
+            #print(f"Turn Right: {self.direction[old_dir]} → {self.direction[self.dir]}")
 
     def move_forward(self):
         """Moves the agent forward in the current direction."""
-        #print(f"🔹 move_forward() called. matrix_row={getattr(self, 'matrix_row', 'NOT SET')}, self ID={id(self)}")
+        #print(f"move_forward() called. matrix_row={getattr(self, 'matrix_row', 'NOT SET')}, self ID={id(self)}")
         if self.moves < self.max_moves:
             self.moves += 1
             old_row, old_col = self.row, self.col  # Store old position
@@ -174,7 +174,7 @@ class SantaFeEnvironment:
                 self.eaten += 1  # Increase food count when food is collected
                 self.matrix_exc[self.row][self.col] = "empty"  # Remove food
             self.matrix_exc[self.row][self.col] = "passed"
-            #print(f"🚶 Move: ({old_row},{old_col}) → ({self.row},{self.col}), Food Collected: {self.eaten}")        
+            #print(f"Move: ({old_row},{old_col}) → ({self.row},{self.col}), Food Collected: {self.eaten}")        
 
     def sense_food(self):
         """Checks if food is ahead in the direction the agent is facing."""
@@ -247,8 +247,7 @@ class SantaFeEnvironment:
         # extracted_direction = direction_encoding.index(1)  # Find index of 1 in direction
         # extracted_food = food_ahead  # This is already a boolean
 
-        # ✅ Print to Verify
-        # print(f"📌 Extracted State - Ant_X: {extracted_x}, Ant_Y: {extracted_y}, Direction: {extracted_direction}, Food Ahead: {extracted_food}")
+        # print(f" Extracted State - Ant_X: {extracted_x}, Ant_Y: {extracted_y}, Direction: {extracted_direction}, Food Ahead: {extracted_food}")
         return state_tensor
 
 
