@@ -278,6 +278,8 @@ def evaluate_fitness(individual, environment):
 
     if collected_food >= environment.total_food:
         print(f"All food pellets eaten at {environment.moves} moves!")
+        torch.save(model.state_dict(), "solved_solution.pth")
+        sys.exit("Solved solution found. Exiting.")
 
     fitness = collected_food - (0.01 * environment.moves)
     fitness = max(fitness, 0)
