@@ -258,7 +258,7 @@ def evaluate_fitness(individual, environment):
     environment._reset() 
 
     time_steps = 0
-    while environment.moves < environment.max_moves:
+    while environment.moves < environment.max_moves and environment.eaten < environment.total_food:
         state_tensor = environment.get_state()
         spk_out, mem_out = model(state_tensor)  # Get Q-values
         action_values = spk_out.sum(dim=0)
@@ -277,7 +277,7 @@ def evaluate_fitness(individual, environment):
     collected_food = environment.eaten
 
     if collected_food >= environment.total_food:
-        print("All food pellets eaten!")
+        print(f"All food pellets eaten at {environment.moves} moves!")
 
     fitness = collected_food - (0.01 * environment.moves)
     fitness = max(fitness, 0)
@@ -336,7 +336,7 @@ def main():
     logbook = tools.Logbook()
     logbook.header = ["gen", "nevals"] + stats.fields
 
-    # === Evaluate initial population ===
+    # Evaluate initial population
     invalid_ind = [ind for ind in pop if not ind.fitness.valid]
     fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
     for ind, fit in zip(invalid_ind, fitnesses):
