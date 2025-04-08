@@ -9,7 +9,7 @@ The Spiking Neural Network (SNN) is composed of SLSTM neurons, enabling the netw
 # Results
 ** WIP **
 Test Trail 1 - test1.txt
-![Fig1](GA-SNN/test1.plot.png)
+![Fig1](GA-SNN/test1_plot.png)
 Figure 1: DSQN solved test trail 1 in 68 generation with 115 moves
 
 # References:
