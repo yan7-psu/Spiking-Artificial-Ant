@@ -17,6 +17,10 @@ from snntorch import surrogate
 
 from deap import algorithms, base, creator, tools
 from functools import partial
+import multiprocessing
+from multiprocessing import Value
+
+early_stop = Value('b', False)
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
@@ -251,13 +255,16 @@ class SantaFeEnvironment:
         return state_tensor
 
 
+
 def evaluate_fitness(individual, environment):
     """Runs the GA-evolved SNN in the Santa Fe Trail environment and evaluates performance."""
+    global early_stop
     model = convert_genome_to_snn(individual)
 
     environment._reset() 
 
     time_steps = 0
+
     while environment.moves < environment.max_moves and environment.eaten < environment.total_food:
         state_tensor = environment.get_state()
         spk_out, mem_out = model(state_tensor)  # Get Q-values
@@ -278,8 +285,8 @@ def evaluate_fitness(individual, environment):
 
     if collected_food >= environment.total_food:
         print(f"All food pellets eaten at {environment.moves} moves!")
-        torch.save(model.state_dict(), "solved_solution.pth")
-        sys.exit("Solved solution found. Exiting.")
+        torch.save(model.state_dict(), "2nd_half_solved_solution-1.pth")
+        early_stop.value = true
 
     fitness = collected_food - (0.01 * environment.moves)
     fitness = max(fitness, 0)
@@ -288,10 +295,9 @@ def evaluate_fitness(individual, environment):
 
     return (fitness,)
 
-import multiprocessing
 import os 
 
-t_path = os.path.join(os.path.dirname(__file__),"santafe_trail.txt")
+t_path = os.path.join(os.path.dirname(__file__),"2nd-half-santa-fe.txt")
 
 # Wrapper function to pass environment explicitly
 def evaluate_fitness_wrapper(individual):
@@ -324,7 +330,7 @@ def main():
 
     pop = toolbox.population(n=mu)
 
-    pool = multiprocessing.Pool(processes=6)
+    pool = multiprocessing.Pool(processes=12)
     toolbox.register("map", pool.map)
     toolbox.register("evaluate", evaluate_fitness_wrapper)
 
@@ -348,8 +354,10 @@ def main():
     logbook.record(gen=0, nevals=len(invalid_ind), **record)
     print(logbook.stream)
 
-    # === Main Evolution Loop ===
+    # Main Evolution Loop
     for gen in range(1, ngen + 1):
+        if early_stop.value:
+            break
         # Variation Strategy: Manual crossover + mutation (Variation 5)
         offspring = [toolbox.clone(ind) for ind in toolbox.select(pop, lambda_)]
 
@@ -381,7 +389,8 @@ def main():
         record = stats.compile(pop)
         logbook.record(gen=gen, nevals=len(invalid_ind), **record)
         print(logbook.stream)
-
+        with open("2nd-half-1.txt", "a") as f:
+            f.write(str(logbook[-1]) + "\n")
     # Plot and Log
     logging.info("Best genome found!")
     print(logbook)
