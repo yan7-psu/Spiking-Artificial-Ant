@@ -14,6 +14,9 @@ import operator
 import copy
 import multiprocessing
 from snntorch import surrogate
+import argparse
+import threading
+import time
 
 from deap import algorithms, base, creator, tools
 from functools import partial
@@ -313,6 +316,28 @@ toolbox.register("select", tools.selTournament, tournsize=3)
 toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.5, indpb=0.05)
 
+def save_best_individual(hof, interval=5):
+    last_saved_fitness = None
+
+    while True:
+        time.sleep(interval)
+
+        if len(hof) > 0 and hof[0].fitness.valid:
+            current_fitness = hof[0].fitness.values
+
+            if current_fitness != last_saved_fitness:
+                try:
+                    # Save to a temporary file first
+                    torch.save(hof[0][:], "autosave_tmp.pth")
+                    os.replace("autosave_tmp.pth", "autosave_best_individual-2nd-half.pth")
+                    print(f"[AutoSave] Best individual saved at {time.strftime('%H:%M:%S')}")
+                    last_saved_fitness = current_fitness
+                except Exception as e:
+                    print(f"[AutoSave] Failed to save: {e}")
+
+def load_individual(filepath):
+    data = torch.load(filepath)
+    return creator.Individual(data)
 
 #  Run GA
 
@@ -320,17 +345,26 @@ torch.set_num_threads(1)
 torch.set_num_interop_threads(1)
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--resume", type=str, help="enter saved individual (e.g autosave_best_individual.pth)")
+    args = parser.parse_args()
+
     random.seed(70)
 
     mu = 200
-    lambda_ = 300
+    lambda_ = 200
     cxpb = 0.6
     mutpb = 0.2
-    ngen = 5000
+    ngen = 10000
 
     pop = toolbox.population(n=mu)
 
-    pool = multiprocessing.Pool(processes=12)
+    if args.resume:
+        print(f"[Resume] Loading individual from {args.resume}")
+        loaded_ind = load_individual(args.resume)
+        pop[0] = loaded_ind  # Insert at start
+
+    pool = multiprocessing.Pool(processes=20)
     toolbox.register("map", pool.map)
     toolbox.register("evaluate", evaluate_fitness_wrapper)
 
@@ -353,6 +387,10 @@ def main():
     record = stats.compile(pop)
     logbook.record(gen=0, nevals=len(invalid_ind), **record)
     print(logbook.stream)
+
+    #Start auto-save (every 15 min)
+    autosave_thread = threading.Thread(target=save_best_individual, args=(hof,), daemon=True)
+    autosave_thread.start()
 
     # Main Evolution Loop
     for gen in range(1, ngen + 1):
@@ -391,22 +429,6 @@ def main():
         print(logbook.stream)
         with open("2nd-half-1.txt", "a") as f:
             f.write(str(logbook[-1]) + "\n")
-    # Plot and Log
-    logging.info("Best genome found!")
-    print(logbook)
-
-    gen = logbook.select("gen")
-    fit_mins = logbook.select("Min")
-    fit_maxs = logbook.select("Max")
-    fit_avgs = logbook.select("Avg")
-
-    fig, ax1 = plt.subplots()
-    ax1.plot(gen, fit_avgs, label="Avg Fitness")
-    ax1.plot(gen, fit_mins, label="Min Fitness")
-    ax1.plot(gen, fit_maxs, label="Max Fitness")
-    ax1.set_xlabel("Generation")
-    ax1.set_ylabel("Fitness")
-    ax1.legend(loc="lower right")
 
     best_snn = convert_genome_to_snn(hof[0])
     torch.save(best_snn.state_dict(), "best_snn.pth")
